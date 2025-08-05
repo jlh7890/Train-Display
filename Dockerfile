@@ -1,32 +1,31 @@
-FROM balenalib/raspberry-pi-debian-python:3.7-buster-run AS builder
+FROM python:3.12-alpine3.22 as builder
+
+RUN apk add --no-cache \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        gcc \
+        musl-dev \
+        linux-headers 
 
 WORKDIR /usr/src/app
 
-RUN mkdir -p /usr/src/debian-rootfs
+# Install the required python packages, and save the compiled result to an output folder
+# This requires gcc/etc which is why we do it in the build image and save the result for the run image
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN install_packages apt-rdepends
+FROM python:3.12-alpine3.22
 
-RUN apt-get update && \
-        apt-get download \
-        $(apt-rdepends tzdata python3 libopenjp2-7 libfreetype6-dev libjpeg-dev libtiff5 libxcb1 | grep -v "^ " | sed 's/debconf-2.0/debconf/g' | sed 's/^libc-dev$/libc6-dev/g' | sed 's/^libz-dev$/zlib1g-dev/g')
+RUN apk add --no-cache \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        tzdata
 
-RUN for pkg in *.deb; \
-      do dpkg-deb  -x $pkg /usr/src/debian-rootfs; \
-      done
+# Copy in the compiled packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 
-COPY ./requirements.txt .
-RUN pip install -t /usr/src/python-packages -r requirements.txt --no-cache-dir --extra-index-url=https://www.piwheels.org/simple
-
-
-FROM busybox:stable
-
-
-COPY --from=builder /usr/src/debian-rootfs ./
-COPY --from=builder /usr/src/python-packages/ /usr/src/python-packages/
-
-COPY VERSION ./
-
+WORKDIR /usr/src/app
 COPY src ./src
-ENV PYTHONPATH=/usr/src/python-packages/
+COPY VERSION .
 
 CMD ["python3", "src/main.py"]
