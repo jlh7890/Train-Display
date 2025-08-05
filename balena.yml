@@ -8,12 +8,12 @@ assets:
   repository:
     type: blob.asset
     data:
-      url: 'https://github.com/balenalabs/uk-train-departure-display'
+      url: 'https://github.com/jlh7890/Train-Display'/
   logo:
     type: blob.asset
     data:
       url: >-
-        https://raw.githubusercontent.com/balenalabs/uk-train-departure-display/master/assets/logo.png
+        https://raw.githubusercontent.com/jlh7890/Train-Display/master/assets/logo.png
 data:
   defaultDeviceType: raspberry-pi
   supportedDeviceTypes:
